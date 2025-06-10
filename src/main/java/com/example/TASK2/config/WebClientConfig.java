@@ -11,9 +11,6 @@ public class WebClientConfig {
    public WebClient webClient(){
      return WebClient.builder()
                     .baseUrl(baseUrl)
-//                   .defaultHeaders(headers -> {
-//                    headers.setBasicAuth(username, password);
-//                 })
                    .build();
 
    }

@@ -5,6 +5,7 @@ import com.example.TASK2.service.HrService;
 import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
 @RestController
@@ -12,30 +13,25 @@ import java.util.List;
 public class HrController {
     @Autowired
     private HrService hrService;
-    @PostMapping("/login")
-    public String login(@RequestHeader("username") String username,
-                        @RequestHeader("password") String password,
-                        HttpSession session) {
-        session.setAttribute("username", username);
-        session.setAttribute("password", password);
-        return "Login successful. Credentials stored in session.";
-    }
-
     @PostMapping("/add")
-    public Employee createEmployee(@RequestBody @Valid EmployeeDTO employeeDTO, HttpSession session) {
+    public Employee createEmployee(@RequestBody @Valid EmployeeDTO employeeDTO, @RequestHeader(value = "username", required = false) String username, @RequestHeader(value = "password", required = false) String password, HttpSession session) {
+        if (username != null && password != null) {
+            session.setAttribute("username", username);
+            session.setAttribute("password", password);
+        }
         return hrService.createEmployee(employeeDTO, session);
     }
-
     @PutMapping("/update/{id}")
-    public Employee updateEmployee(@PathVariable int id,
-                                   @RequestBody @Valid EmployeeDTO employeeDTO,
-                                   HttpSession session) {
+    public Employee updateEmployee(@PathVariable int id, @RequestBody @Valid EmployeeDTO employeeDTO, HttpSession session) {
         return hrService.updateEmployee(id, employeeDTO, session);
     }
-
     @DeleteMapping("/delete/{id}")
-    public String deleteEmployee(@PathVariable int id, HttpSession session) {
-        return hrService.deleteEmployee(id, session);
+    public ResponseEntity<String> deleteEmployee(@PathVariable int id, @RequestHeader(value = "username", required = false) String username, @RequestHeader(value = "password", required = false) String password, HttpSession session) {
+        if (username != null && password != null) {
+            session.setAttribute("username", username);
+            session.setAttribute("password", password);
+        }
+        return ResponseEntity.ok(hrService.deleteEmployee(id, session));
     }
 
     @GetMapping("/{id}")

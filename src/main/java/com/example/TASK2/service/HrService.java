@@ -12,31 +12,40 @@ import java.util.List;
 public class HrService {
     @Autowired
     private WebClient webClient;
-    private String getUsername(HttpSession session) {
-        Object username = session.getAttribute("username");
-        if (username == null) throw new RuntimeException("Username not found in session. Please login first.");
-        return username.toString();
-    }
-    private String getPassword(HttpSession session) {
-        Object password = session.getAttribute("password");
-        if (password == null) throw new RuntimeException("Password not found in session. Please login first.");
-        return password.toString();
+    private boolean isAuthenticated(HttpSession session) {
+        String username = (String) session.getAttribute("username");
+        String password = (String) session.getAttribute("password");
+        return username != null && password != null;
     }
     public Employee createEmployee(EmployeeDTO employeeDTO, HttpSession session) {
-        return webClient.post()
-                .uri("/add")
-                .headers(headers -> headers.setBasicAuth(getUsername(session), getPassword(session)))
-                .bodyValue(employeeDTO)
-                .retrieve()
-                .bodyToMono(Employee.class)
-                .block();
-    }
+        if (!isAuthenticated(session)) {
+            throw new RuntimeException("Please provide credentials");
+        }
+        String username = (String) session.getAttribute("username");
+        String password = (String) session.getAttribute("password");
+        try {
+            return webClient.post()
+                    .uri("/add")
+                    .headers(headers -> headers.setBasicAuth(username, password))
+                    .bodyValue(employeeDTO)
+                    .retrieve()
+                    .bodyToMono(Employee.class)
+                    .block();
+        } catch (WebClientResponseException ex) {
+            throw new RuntimeException("Failed to create employee", ex);
+        }
 
+    }
     public Employee updateEmployee(int id, EmployeeDTO employeeDTO, HttpSession session) {
+        if (!isAuthenticated(session)) {
+            throw new RuntimeException("Please provide credentials");
+        }
+        String username = (String) session.getAttribute("username");
+        String password = (String) session.getAttribute("password");
         try {
             return webClient.put()
                     .uri("/update/{id}", id)
-                    .headers(headers -> headers.setBasicAuth(getUsername(session), getPassword(session)))
+                    .headers(headers -> headers.setBasicAuth(username, password))
                     .bodyValue(employeeDTO)
                     .retrieve()
                     .bodyToMono(Employee.class)
@@ -45,12 +54,16 @@ public class HrService {
             throw new ResourceNotFoundException("Record not present");
         }
     }
-
     public String deleteEmployee(int id, HttpSession session) {
+        if (!isAuthenticated(session)) {
+            throw new RuntimeException("Please provide credentials");
+        }
+        String username = (String) session.getAttribute("username");
+        String password = (String) session.getAttribute("password");
         try {
             return webClient.delete()
                     .uri("/delete/{id}", id)
-                    .headers(headers -> headers.setBasicAuth(getUsername(session), getPassword(session)))
+                    .headers(headers -> headers.setBasicAuth(username, password))
                     .retrieve()
                     .bodyToMono(String.class)
                     .block();
@@ -62,30 +75,44 @@ public class HrService {
     public Employee getEmployeeById(int id) {
         try {
             return webClient.get()
-                    .uri("/{id}", id)
+                    .uri("/employees/{id}", id)
                     .retrieve()
                     .bodyToMono(Employee.class)
                     .block();
-        } catch (WebClientResponseException.NotFound ex) {
-            throw new ResourceNotFoundException("Record not present");
+        } catch (WebClientResponseException e) {
+            if (e.getStatusCode().value() == 404) {
+                throw new ResourceNotFoundException("Record not present");
+            } else {
+                throw new RuntimeException("Failed to retrieve employee", e);
+            }
         }
     }
 
     public List<Employee> getEmployeesByDepartment(String department) {
-        return webClient.get()
-                .uri("/department/{department}", department)
-                .retrieve()
-                .bodyToFlux(Employee.class)
-                .collectList()
-                .block();
+         try {
+             return webClient.get()
+                    .uri("/employees/department/{department}", department)
+                    .retrieve()
+                    .bodyToFlux(Employee.class)
+                    .collectList()
+                    .block();
+        } catch (Exception e) {
+             throw new RuntimeException("Error fetching employees", e);
+         }
     }
 
     public List<Employee> getAllEmployees() {
-        return webClient.get()
-                .uri("/all")
-                .retrieve()
-                .bodyToFlux(Employee.class)
-                .collectList()
-                .block();
+        try {
+            return webClient.get()
+                    .uri("/employees")
+                    .retrieve()
+                    .bodyToFlux(Employee.class)
+                    .collectList()
+                    .block();
+        } catch (WebClientResponseException e) {
+            throw new RuntimeException("Failed to retrieve employees", e);
+        } catch (Exception e) {
+            throw new RuntimeException("Error fetching all employees", e);
+        }
     }
 }
