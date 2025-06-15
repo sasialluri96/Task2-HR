@@ -1,7 +1,9 @@
 package com.example.TASK2.entities;
 
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import lombok.Data;
 @Data
+@JsonPropertyOrder({"id", "name", "department"})
 public class Employee {
     private int id;
     private String name;
@@ -11,10 +13,10 @@ public class Employee {
 
     }
 
-    public Employee(int id, String department, String name) {
-        this.department = department;
-        this.name = name;
+    public Employee(int id,String name,String department) {
         this.id = id;
+        this.name = name;
+        this.department = department;
     }
 
 

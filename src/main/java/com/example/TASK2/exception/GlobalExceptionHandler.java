@@ -8,9 +8,13 @@ import org.springframework.web.reactive.function.client.WebClientResponseExcepti
 
 @ControllerAdvice
 public class GlobalExceptionHandler {
+//    @ExceptionHandler(ResourceNotFoundException.class)
+//    public ResponseEntity<String> handleNotFound(ResourceNotFoundException ex) {
+//        return new ResponseEntity<>(ex.getMessage(), HttpStatus.NOT_FOUND);
+//    }
     @ExceptionHandler(ResourceNotFoundException.class)
-    public ResponseEntity<String> handleNotFound(ResourceNotFoundException ex) {
-        return new ResponseEntity<>(ex.getMessage(), HttpStatus.NOT_FOUND);
+    public ResponseEntity<String> handleResourceNotFoundException(ResourceNotFoundException ex) {
+    return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ex.getMessage());
     }
     @ExceptionHandler(WebClientResponseException.class)
     public ResponseEntity<String> handleWebClientError(WebClientResponseException ex) {
@@ -27,6 +31,8 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>("Something went wrong: " + ex.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
 
     }
+
+
 
 
 }

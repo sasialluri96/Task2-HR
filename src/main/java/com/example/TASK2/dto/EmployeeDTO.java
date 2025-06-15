@@ -10,6 +10,14 @@ public class EmployeeDTO {
     @NotBlank(message = "Department must not be blank")
     @Pattern(regexp = "^[A-Za-z\\s]+$", message = "Department must contain only letters")
     private String department;
+
+    public EmployeeDTO() {
+    }
+    public EmployeeDTO(String name, String department) {
+        this.name = name;
+        this.department = department;
+    }
+
     public String getName() {
         return name;
     }
